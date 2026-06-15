@@ -8,6 +8,7 @@
 #            GET  /sensors/example   → example input reference
 # ─────────────────────────────────────────────────────────────────────────────
 
+from flask_cors import CORS
 import os
 import joblib
 import numpy as np
@@ -18,6 +19,7 @@ from flask import Flask, request, jsonify
 
 # ─── Initialize Flask App ────────────────────────────────────────────────────
 app = Flask(__name__)
+CORS(app)
 # __name__ tells Flask this is the main application file
 
 # ─── Load Trained Model ──────────────────────────────────────────────────────
