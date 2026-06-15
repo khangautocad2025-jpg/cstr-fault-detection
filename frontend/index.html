@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CSTR Fault Detection — Control Room</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    /* ── Base ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0f1a;
+      color: #e0e6f0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e3a5f;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #4fc3f7;
+      text-transform: uppercase;
+    }
+    .header .subtitle {
+      font-size: 11px;
+      color: #546e7a;
+      margin-top: 4px;
+      letter-spacing: 0.05em;
+    }
+    .clock {
+      font-size: 13px;
+      color: #546e7a;
+      text-align: right;
+    }
+
+    /* ── Status Banner ── */
+    .status-banner {
+      border-radius: 6px;
+      padding: 16px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.4s ease;
+      border: 1px solid;
+    }
+    .status-banner.normal {
+      background: #0d2318;
+      border-color: #1b5e20;
+    }
+    .status-banner.anomaly {
+      background: #2d0a0a;
+      border-color: #b71c1c;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { border-color: #b71c1c; }
+      50%       { border-color: #ef5350; }
+    }
+    .status-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .normal  .status-dot { background: #4caf50; box-shadow: 0 0 8px #4caf50; }
+    .anomaly .status-dot { background: #ef5350; box-shadow: 0 0 8px #ef5350; }
+    .status-text { flex: 1; }
+    .status-label {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+    .normal  .status-label { color: #4caf50; }
+    .anomaly .status-label { color: #ef5350; }
+    .status-msg { font-size: 12px; color: #90a4ae; margin-top: 2px; }
+    .anomaly-score {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+    }
+    .normal  .anomaly-score { color: #4caf50; }
+    .anomaly .anomaly-score { color: #ef5350; }
+
+    /* ── Grid ── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    /* ── Panel ── */
+    .panel {
+      background: #0d1b2a;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      padding: 16px;
+    }
+    .panel-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #546e7a;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #1e3a5f;
+      padding-bottom: 8px;
+    }
+
+    /* ── Tank Cards ── */
+    .tank-label {
+      font-size: 11px;
+      color: #4fc3f7;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .sensor-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid #0f2440;
+      font-size: 12px;
+    }
+    .sensor-row:last-child { border-bottom: none; }
+    .sensor-name { color: #78909c; }
+    .sensor-value {
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      color: #e0e6f0;
+      transition: color 0.3s;
+    }
+    .sensor-value.alert { color: #ef5350; }
+
+    /* ── Chart ── */
+    .chart-container { position: relative; height: 220px; }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    .btn {
+      padding: 8px 18px;
+      border-radius: 4px;
+      border: none;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-normal  { background: #1b5e20; color: #a5d6a7; }
+    .btn-fault   { background: #7f0000; color: #ef9a9a; }
+    .btn-stop    { background: #1e3a5f; color: #90caf9; }
+    .update-rate {
+      font-size: 11px;
+      color: #546e7a;
+      margin-left: auto;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div>
+    <h1>⬡ CSTR Fault Detection System</h1>
+    <div class="subtitle">3-Tank Series · Ethylene → Ethylene Oxide → Ethylene Glycol</div>
+  </div>
+  <div class="clock" id="clock">--:--:--</div>
+</div>
+
+<!-- ── Status Banner ── -->
+<div class="status-banner normal" id="statusBanner">
+  <div class="status-dot"></div>
+  <div class="status-text">
+    <div class="status-label" id="statusLabel">INITIALIZING...</div>
+    <div class="status-msg"  id="statusMsg">Connecting to API...</div>
+  </div>
+  <div class="anomaly-score" id="anomalyScore">—</div>
+</div>
+
+<!-- ── Controls ── -->
+<div class="controls">
+  <button class="btn btn-normal" onclick="sendNormal()">▶ Simulate Normal</button>
+  <button class="btn btn-fault"  onclick="sendFault()">⚠ Simulate Fault</button>
+  <button class="btn btn-stop"   onclick="stopSim()">■ Stop</button>
+  <span class="update-rate" id="updateRate">Interval: —</span>
+</div>
+
+<!-- ── Tank Sensor Cards ── -->
+<div class="grid-3">
+  <!-- Tank 1 -->
+  <div class="panel">
+    <div class="panel-title">Sensor Readings</div>
+    <div class="tank-label">⬡ Tank 1</div>
+    <div class="sensor-row"><span class="sensor-name">Ca₁ [mol/m³]</span><span class="sensor-value" id="Ca1">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">Cb₁ [mol/m³]</span><span class="sensor-value" id="Cb1">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">T₁  [K]</span>     <span class="sensor-value" id="T1">—</span></div>
+  </div>
+  <!-- Tank 2 -->
+  <div class="panel">
+    <div class="panel-title">Sensor Readings</div>
+    <div class="tank-label">⬡ Tank 2</div>
+    <div class="sensor-row"><span class="sensor-name">Ca₂ [mol/m³]</span><span class="sensor-value" id="Ca2">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">Cb₂ [mol/m³]</span><span class="sensor-value" id="Cb2">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">T₂  [K]</span>     <span class="sensor-value" id="T2">—</span></div>
+  </div>
+  <!-- Tank 3 -->
+  <div class="panel">
+    <div class="panel-title">Sensor Readings</div>
+    <div class="tank-label">⬡ Tank 3</div>
+    <div class="sensor-row"><span class="sensor-name">Ca₃ [mol/m³]</span><span class="sensor-value" id="Ca3">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">Cb₃ [mol/m³]</span><span class="sensor-value" id="Cb3">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">T₃  [K]</span>     <span class="sensor-value" id="T3">—</span></div>
+  </div>
+</div>
+
+<!-- ── Charts ── -->
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-title">Temperature Profile — All Tanks [K]</div>
+    <div class="chart-container">
+      <canvas id="tempChart"></canvas>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Anomaly Score Over Time</div>
+    <div class="chart-container">
+      <canvas id="scoreChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Chart Setup ──────────────────────────────────────────────────────────────
+const MAX_POINTS = 40;
+const labels     = [];
+
+function makeChart(id, datasets, yLabel) {
+  return new Chart(document.getElementById(id), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#78909c', font: { size: 10 } } } },
+      scales: {
+        x: { ticks: { color: '#546e7a', maxTicksLimit: 6, font: { size: 9 } },
+             grid:  { color: '#0f2440' } },
+        y: { ticks: { color: '#546e7a', font: { size: 9 } },
+             grid:  { color: '#0f2440' },
+             title: { display: true, text: yLabel, color: '#546e7a', font: { size: 9 } } }
+      }
+    }
+  });
+}
+
+const tempData = [
+  { label: 'T1', data: [], borderColor: '#ef5350', borderWidth: 1.5, pointRadius: 0, tension: 0.3 },
+  { label: 'T2', data: [], borderColor: '#ffa726', borderWidth: 1.5, pointRadius: 0, tension: 0.3 },
+  { label: 'T3', data: [], borderColor: '#4fc3f7', borderWidth: 1.5, pointRadius: 0, tension: 0.3 }
+];
+const scoreData = [
+  { label: 'Anomaly Score', data: [], borderColor: '#ab47bc',
+    borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: true,
+    backgroundColor: 'rgba(171,71,188,0.08)' }
+];
+
+const tempChart  = makeChart('tempChart',  tempData,  'Temperature [K]');
+const scoreChart = makeChart('scoreChart', scoreData, 'Score');
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function push(arr, val) {
+  arr.push(val);
+  if (arr.length > MAX_POINTS) arr.shift();
+}
+
+function updateSensor(id, val, isAlert=false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = typeof val === 'number' ? val.toFixed(4) : val;
+  el.className   = 'sensor-value' + (isAlert ? ' alert' : '');
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}, 1000);
+
+// ── API Call ─────────────────────────────────────────────────────────────────
+async function predict(sensors) {
+  try {
+    const res  = await fetch('http://127.0.0.1:5000/predict', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify(sensors)
+    });
+    const data = await res.json();
+    updateDashboard(sensors, data);
+  } catch (e) {
+    document.getElementById('statusLabel').textContent = 'API OFFLINE';
+    document.getElementById('statusMsg').textContent   = 'Make sure Flask is running on port 5000';
+  }
+}
+
+// ── Update Dashboard ─────────────────────────────────────────────────────────
+function updateDashboard(sensors, result) {
+  const isAnomaly = result.status === 'ANOMALY';
+  const banner    = document.getElementById('statusBanner');
+  banner.className = 'status-banner ' + (isAnomaly ? 'anomaly' : 'normal');
+
+  document.getElementById('statusLabel').textContent = result.status;
+  document.getElementById('statusMsg').textContent   = result.message;
+  document.getElementById('anomalyScore').textContent =
+    (result.anomaly_score >= 0 ? '+' : '') + result.anomaly_score.toFixed(4);
+
+  // Sensor cards — highlight T values red if anomaly
+  ['Ca1','Cb1','Ca2','Cb2','Ca3','Cb3'].forEach(k => updateSensor(k, sensors[k]));
+  ['T1','T2','T3'].forEach(k => updateSensor(k, sensors[k], isAnomaly));
+
+  // Charts
+  const t = new Date().toLocaleTimeString();
+  push(labels, t);
+  push(tempData[0].data, sensors.T1);
+  push(tempData[1].data, sensors.T2);
+  push(tempData[2].data, sensors.T3);
+  push(scoreData[0].data, result.anomaly_score);
+
+  tempChart.update();
+  scoreChart.update();
+}
+
+// ── Simulation ───────────────────────────────────────────────────────────────
+let simInterval = null;
+
+const NORMAL_SENSORS = {
+  Ca1:1.25, Cb1:0.45, T1:339.8,
+  Ca2:0.81, Cb2:0.62, T2:339.6,
+  Ca3:0.50, Cb3:0.68, T3:339.4
+};
+const FAULT_SENSORS = {
+  Ca1:1.25, Cb1:0.45, T1:341.5,
+  Ca2:0.81, Cb2:0.62, T2:341.2,
+  Ca3:0.50, Cb3:0.68, T3:340.8
+};
+
+function addNoise(sensors, scale=0.02) {
+  const out = {};
+  Object.keys(sensors).forEach(k => {
+    out[k] = +(sensors[k] + (Math.random()-0.5)*scale).toFixed(4);
+  });
+  return out;
+}
+
+function sendNormal() {
+  stopSim();
+  document.getElementById('updateRate').textContent = 'Interval: 1.5s — Normal mode';
+  simInterval = setInterval(() => predict(addNoise(NORMAL_SENSORS)), 1500);
+  predict(addNoise(NORMAL_SENSORS));
+}
+
+function sendFault() {
+  stopSim();
+  document.getElementById('updateRate').textContent = 'Interval: 1.5s — FAULT mode';
+  simInterval = setInterval(() => predict(addNoise(FAULT_SENSORS, 0.05)), 1500);
+  predict(addNoise(FAULT_SENSORS, 0.05));
+}
+
+function stopSim() {
+  if (simInterval) { clearInterval(simInterval); simInterval = null; }
+  document.getElementById('updateRate').textContent = 'Interval: stopped';
+}
+</script>
+</body>
+</html>
