@@ -40,3 +40,12 @@ cstr-fault-detection/
 - Accuracy: 90%
 - Anomaly Recall: 1.00
 - Contamination: 0.222
+
+### Save work
+1. Navigating into the project folder first
+cd C:\First_project\cstr-fault-detection
+
+2. Then run commmand excatly like below:
+git add .
+git commit -m "fixed sensor input bug"
+git push
