@@ -2,6 +2,10 @@ let anomalyCount = 0;
 let normalCount  = 0;
 const CONFIRM_THRESHOLD = 3;// must see 3 consecutive readings before switching
 
+let anomalyStartTime  = null;  // when did anomaly begin
+let anomalyDuration   = 0;     // how long in seconds
+let alarmLevel        = 'NONE'; // NONE → WATCH → WARNING → CRITICAL
+
 // ── Chart Setup ──────────────────────────────────────────────────────────────
 const MAX_POINTS = 40;
 const labels     = [];
@@ -92,12 +96,11 @@ function updateDashboard(sensors, result) {
   let confirmedState = null;
   if (anomalyCount >= CONFIRM_THRESHOLD) confirmedState = 'ANOMALY';
   if (normalCount  >= CONFIRM_THRESHOLD) confirmedState = 'NORMAL';
-  if (!confirmedState) return; // still waiting for confirmation — don't update banner
+  if (!confirmedState) return;
 
-  const banner = document.getElementById('statusBanner');
-  banner.className = 'status-banner ' + (confirmedState === 'ANOMALY' ? 'anomaly' : 'normal');
-  document.getElementById('statusLabel').textContent = confirmedState;
-  document.getElementById('statusMsg').textContent   = result.message;
+  // ── replaced old banner lines with Time-In-Alarm ──
+  updateAlarmLevel(confirmedState);
+
   document.getElementById('anomalyScore').textContent =
     (result.anomaly_score >= 0 ? '+' : '') + result.anomaly_score.toFixed(4);
 
@@ -105,7 +108,7 @@ function updateDashboard(sensors, result) {
   ['Ca1','Cb1','Ca2','Cb2','Ca3','Cb3'].forEach(k => updateSensor(k, sensors[k]));
   ['T1','T2','T3'].forEach(k => updateSensor(k, sensors[k], confirmedState === 'ANOMALY'));
 
-  // Charts — always update regardless of confirmation
+  // Charts
   const t = new Date().toLocaleTimeString();
   push(labels, t);
   push(tempData[0].data, sensors.T1);
@@ -156,4 +159,70 @@ function sendFault() {
 function stopSim() {
   if (simInterval) { clearInterval(simInterval); simInterval = null; }
   document.getElementById('updateRate').textContent = 'Interval: stopped';
+}
+
+// ── Time-In-Alarm Logic ───────────────────────────────────────────────────
+function updateAlarmLevel(confirmedState) {
+  const now = Date.now();
+
+  if (confirmedState === 'ANOMALY') {
+    // Start timer if not already running
+    if (!anomalyStartTime) anomalyStartTime = now;
+    anomalyDuration = Math.floor((now - anomalyStartTime) / 1000);
+
+    // Escalate based on duration
+    if      (anomalyDuration >= 120) alarmLevel = 'CRITICAL';
+    else if (anomalyDuration >= 30)  alarmLevel = 'WARNING';
+    else if (anomalyDuration >= 5)   alarmLevel = 'WATCH';
+    else                             alarmLevel = 'NONE';
+
+  } else {
+    // Reset when normal restored
+    anomalyStartTime = null;
+    anomalyDuration  = 0;
+    alarmLevel       = 'NONE';
+  }
+
+  updateAlarmBanner(confirmedState);
+}
+
+function updateAlarmBanner(confirmedState) {
+  const banner = document.getElementById('statusBanner');
+  const label  = document.getElementById('statusLabel');
+  const msg    = document.getElementById('statusMsg');
+
+  if (confirmedState === 'NORMAL') {
+    banner.style.background   = '#0d2318';
+    banner.style.borderColor  = '#1b5e20';
+    label.style.color         = '#4caf50';
+    label.textContent         = '✅ NORMAL';
+    msg.textContent           = 'Reactor operating within safe parameters';
+    document.getElementById('alarmTimer').textContent = '';
+    return;
+  }
+
+  // Anomaly — show escalating alarm
+  const configs = {
+    'NONE'    : { bg: '#1a1200', border: '#f9a825', color: '#f9a825',
+                  text: '👁 WATCH',
+                  sub: `Anomaly detected — monitoring (${anomalyDuration}s)` },
+    'WATCH'   : { bg: '#1a1200', border: '#ffa726', color: '#ffa726',
+                  text: '⚠ WATCH — SUSTAINED',
+                  sub: `Anomaly sustained ${anomalyDuration}s — operator awareness required` },
+    'WARNING' : { bg: '#2d1500', border: '#ef6c00', color: '#ef6c00',
+                  text: '🔶 WARNING',
+                  sub: `Anomaly sustained ${anomalyDuration}s — investigate immediately` },
+    'CRITICAL': { bg: '#2d0a0a', border: '#b71c1c', color: '#ef5350',
+                  text: '🚨 CRITICAL — SHUTDOWN RECOMMENDED',
+                  sub: `Anomaly sustained ${anomalyDuration}s — THERMAL RUNAWAY RISK` }
+  };
+
+  const cfg = configs[alarmLevel];
+  banner.style.background  = cfg.bg;
+  banner.style.borderColor = cfg.border;
+  label.style.color        = cfg.color;
+  label.textContent        = cfg.text;
+  msg.textContent          = cfg.sub;
+  document.getElementById('alarmTimer').textContent =
+    `Time in alarm: ${anomalyDuration}s`;
 }
