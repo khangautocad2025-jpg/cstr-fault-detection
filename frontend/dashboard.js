@@ -244,5 +244,5 @@ function goToDiagnosis() {
 
   // Pass sensor data via URL parameters to diagnosis page
   const params = new URLSearchParams(sensors);
-  window.location.href = `diagnose.html?${params}`;
+  window.location.href = `diagnosis.html?${params}`;
 }
