@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CSTR — Fault Diagnosis</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0f1a;
+      color: #e0e6f0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e3a5f;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .header h1 { font-size: 18px; font-weight: 700;
+                 letter-spacing: 0.1em; color: #4fc3f7;
+                 text-transform: uppercase; }
+    .header .subtitle { font-size: 11px; color: #546e7a;
+                        margin-top: 4px; letter-spacing: 0.05em; }
+
+    /* ── Nav ── */
+    nav { display: flex; gap: 16px; margin-bottom: 20px;
+          border-bottom: 1px solid #1e3a5f; padding-bottom: 12px; }
+    nav a { text-decoration: none; font-size: 12px;
+            letter-spacing: 0.08em; }
+    nav a.active { color: #4fc3f7; }
+    nav a.inactive { color: #546e7a; }
+
+    /* ── Panel ── */
+    .panel {
+      background: #0d1b2a;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .panel-title {
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #546e7a;
+      margin-bottom: 16px; border-bottom: 1px solid #1e3a5f;
+      padding-bottom: 8px;
+    }
+
+    /* ── Fault Banner ── */
+    .fault-banner {
+      border-radius: 6px; padding: 20px 24px;
+      margin-bottom: 20px; border: 1px solid;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .fault-banner.normal  { background: #0d2318; border-color: #1b5e20; }
+    .fault-banner.anomaly { background: #2d0a0a; border-color: #b71c1c; }
+    .fault-banner.loading { background: #0d1b2a; border-color: #1e3a5f; }
+
+    .fault-type {
+      font-size: 22px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .normal  .fault-type { color: #4caf50; }
+    .anomaly .fault-type { color: #ef5350; }
+    .loading .fault-type { color: #546e7a; }
+
+    .fault-desc { font-size: 13px; color: #90a4ae; margin-top: 6px; }
+    .confidence-badge {
+      margin-left: auto; padding: 8px 16px;
+      border-radius: 4px; font-size: 13px; font-weight: 700;
+      background: #0a0f1a; border: 1px solid #1e3a5f;
+    }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr;
+               gap: 20px; margin-bottom: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr);
+               gap: 16px; margin-bottom: 20px; }
+
+    /* ── Sensor Cards ── */
+    .tank-label { font-size: 11px; color: #4fc3f7;
+                  text-transform: uppercase; letter-spacing: 0.08em;
+                  margin-bottom: 10px; font-weight: 700; }
+    .sensor-row {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 6px 0;
+      border-bottom: 1px solid #0f2440; font-size: 12px;
+    }
+    .sensor-row:last-child { border-bottom: none; }
+    .sensor-name { color: #78909c; }
+    .sensor-value { font-weight: 700; color: #e0e6f0; }
+    .sensor-value.alert  { color: #ef5350; }
+    .sensor-value.normal { color: #4caf50; }
+
+    .deviation-tag {
+      font-size: 10px; padding: 2px 6px; border-radius: 3px;
+      margin-left: 8px;
+    }
+    .deviation-tag.high { background: #7f0000; color: #ef9a9a; }
+    .deviation-tag.ok   { background: #1b5e20; color: #a5d6a7; }
+
+    /* ── Actions ── */
+    .action-item {
+      display: flex; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid #0f2440; font-size: 13px;
+      color: #90a4ae; align-items: flex-start;
+    }
+    .action-item:last-child { border-bottom: none; }
+    .action-num {
+      min-width: 22px; height: 22px; border-radius: 50%;
+      background: #1e3a5f; color: #4fc3f7; font-size: 11px;
+      font-weight: 700; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ── Data Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th {
+      text-align: left; padding: 8px 12px; color: #546e7a;
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; border-bottom: 1px solid #1e3a5f;
+    }
+    td { padding: 8px 12px; border-bottom: 1px solid #0f2440;
+         color: #90a4ae; }
+    td.val { color: #e0e6f0; font-weight: 700; }
+    td.alert { color: #ef5350; font-weight: 700; }
+    td.ok    { color: #4caf50; }
+
+    /* ── Button ── */
+    .btn {
+      padding: 8px 18px; border-radius: 4px; border: none;
+      font-family: 'Courier New', monospace; font-size: 12px;
+      font-weight: 700; letter-spacing: 0.06em; cursor: pointer;
+      text-transform: uppercase; transition: opacity 0.2s;
+      margin-right: 8px; margin-bottom: 16px;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #1e3a5f; color: #90caf9; }
+    .btn-fault   { background: #7f0000; color: #ef9a9a; }
+    .btn-normal  { background: #1b5e20; color: #a5d6a7; }
+
+    .loading-text { color: #546e7a; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div>
+    <h1>⚙ Fault Diagnosis System</h1>
+    <div class="subtitle">
+      3-Tank CSTR Series · Two-Stage AI Pipeline · 
+      Isolation Forest + Decision Tree
+    </div>
+  </div>
+  <div style="font-size:11px; color:#546e7a;" id="diagClock">--:--:--</div>
+</div>
+
+<!-- ── Navigation ── -->
+<nav>
+  <a href="index.html"    class="inactive">⬡ LIVE MONITOR</a>
+  <a href="diagnose.html" class="active">⚙ FAULT DIAGNOSIS</a>
+</nav>
+
+<!-- ── Controls ── -->
+<button class="btn btn-normal" onclick="runDiagnosis('normal')">
+  ▶ Test Normal
+</button>
+<button class="btn btn-fault" onclick="runDiagnosis('fault')">
+  ⚠ Test Fault
+</button>
+<button class="btn btn-primary" onclick="runDiagnosis('current')">
+  ↻ Run from Live Data
+</button>
+
+<!-- ── Fault Banner ── -->
+<div class="fault-banner loading" id="faultBanner">
+  <div>
+    <div class="fault-type" id="faultType">AWAITING DIAGNOSIS</div>
+    <div class="fault-desc" id="faultDesc">
+      Click a button above or navigate from the live monitor
+    </div>
+  </div>
+  <div class="confidence-badge" id="confidenceBadge">— %</div>
+</div>
+
+<!-- ── Sensor Readings ── -->
+<div class="grid-3">
+  <div class="panel">
+    <div class="panel-title">Tank 1 — Sensor Readings</div>
+    <div class="tank-label">⬡ Tank 1</div>
+    <div class="sensor-row">
+      <span class="sensor-name">Ca₁ [mol/m³]</span>
+      <span><span class="sensor-value" id="dCa1">—</span>
+      <span class="deviation-tag" id="dCa1Tag"></span></span>
+    </div>
+    <div class="sensor-row">
+      <span class="sensor-name">Cb₁ [mol/m³]</span>
+      <span><span class="sensor-value" id="dCb1">—</span></span>
+    </div>
+    <div class="sensor-row">
+      <span class="sensor-name">T₁ [K]</span>
+      <span><span class="sensor-value" id="dT1">—</span>
+      <span class="deviation-tag" id="dT1Tag"></span></span>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Tank 2 — Sensor Readings</div>
+    <div class="tank-label">⬡ Tank 2</div>
+    <div class="sensor-row">
+      <span class="sensor-name">Ca₂ [mol/m³]</span>
+      <span><span class="sensor-value" id="dCa2">—</span>
+      <span class="deviation-tag" id="dCa2Tag"></span></span>
+    </div>
+    <div class="sensor-row">
+      <span class="sensor-name">Cb₂ [mol/m³]</span>
+      <span><span class="sensor-value" id="dCb2">—</span></span>
+    </div>
+    <div class="sensor-row">
+      <span class="sensor-name">T₂ [K]</span>
+      <span><span class="sensor-value" id="dT2">—</span>
+      <span class="deviation-tag" id="dT2Tag"></span></span>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Tank 3 — Sensor Readings</div>
+    <div class="tank-label">⬡ Tank 3</div>
+    <div class="sensor-row">
+      <span class="sensor-name">Ca₃ [mol/m³]</span>
+      <span><span class="sensor-value" id="dCa3">—</span>
+      <span class="deviation-tag" id="dCa3Tag"></span></span>
+    </div>
+    <div class="sensor-row">
+      <span class="sensor-name">Cb₃ [mol/m³]</span>
+      <span><span class="sensor-value" id="dCb3">—</span></span>
+    </div>
+    <div class="sensor-row">
+      <span class="sensor-name">T₃ [K]</span>
+      <span><span class="sensor-value" id="dT3">—</span>
+      <span class="deviation-tag" id="dT3Tag"></span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Diagnosis Details ── -->
+<div class="grid-2">
+  <!-- Affected Parameters -->
+  <div class="panel">
+    <div class="panel-title">Affected Parameters</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Sensor</th>
+          <th>Current</th>
+          <th>Baseline</th>
+          <th>Deviation</th>
+        </tr>
+      </thead>
+      <tbody id="affectedTable">
+        <tr><td colspan="4" class="loading-text">
+          Run diagnosis to see affected parameters
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Recommended Actions -->
+  <div class="panel">
+    <div class="panel-title">Recommended Operator Actions</div>
+    <div id="actionsList">
+      <div class="loading-text">Run diagnosis to see recommendations</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AI Pipeline Info ── -->
+<div class="panel">
+  <div class="panel-title">AI Pipeline — Two Stage Detection</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Stage</th>
+        <th>Model</th>
+        <th>Job</th>
+        <th>Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="val">1</td>
+        <td class="val">Isolation Forest</td>
+        <td>Anomaly Detection</td>
+        <td id="stage1Result" class="ok">—</td>
+      </tr>
+      <tr>
+        <td class="val">2</td>
+        <td class="val">Decision Tree</td>
+        <td>Fault Classification</td>
+        <td id="stage2Result" class="ok">—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+// ── Clock ─────────────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('diagClock').textContent =
+    new Date().toLocaleTimeString();
+}, 1000);
+
+// ── Sensor Presets ────────────────────────────────────────────────────────
+const NORMAL_SENSORS = {
+  Ca1:1.25, Cb1:0.45, T1:339.8,
+  Ca2:0.81, Cb2:0.62, T2:339.6,
+  Ca3:0.50, Cb3:0.68, T3:339.4
+};
+const FAULT_SENSORS = {
+  Ca1:1.25, Cb1:0.45, T1:341.5,
+  Ca2:0.81, Cb2:0.62, T2:341.2,
+  Ca3:0.50, Cb3:0.68, T3:340.8
+};
+
+// ── Load sensor data from URL params (passed from index.html) ─────────────
+function getSensorsFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const sensors = {};
+  ['Ca1','Cb1','T1','Ca2','Cb2','T2','Ca3','Cb3','T3'].forEach(k => {
+    sensors[k] = parseFloat(params.get(k)) || NORMAL_SENSORS[k];
+  });
+  return sensors;
+}
+
+// ── Run Diagnosis ─────────────────────────────────────────────────────────
+async function runDiagnosis(mode) {
+  let sensors;
+  if      (mode === 'normal')  sensors = NORMAL_SENSORS;
+  else if (mode === 'fault')   sensors = FAULT_SENSORS;
+  else                         sensors = getSensorsFromURL();
+
+  // Update sensor display
+  ['Ca1','Cb1','T1','Ca2','Cb2','T2','Ca3','Cb3','T3'].forEach(k => {
+    const el = document.getElementById('d' + k);
+    if (el) el.textContent = sensors[k].toFixed(4);
+  });
+
+  try {
+    const res  = await fetch('http://127.0.0.1:5000/diagnose', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify(sensors)
+    });
+    const data = await res.json();
+    renderDiagnosis(data);
+  } catch(e) {
+    document.getElementById('faultType').textContent = 'API OFFLINE';
+    document.getElementById('faultDesc').textContent =
+      'Make sure Flask is running on port 5000';
+  }
+}
+
+// ── Render Results ────────────────────────────────────────────────────────
+function renderDiagnosis(data) {
+  const banner    = document.getElementById('faultBanner');
+  const isAnomaly = data.status === 'ANOMALY';
+
+  // Banner
+  banner.className = 'fault-banner ' + (isAnomaly ? 'anomaly' : 'normal');
+  document.getElementById('faultType').textContent =
+    isAnomaly ? data.fault_type.replace('_', ' ').toUpperCase() : '✅ NORMAL OPERATION';
+  document.getElementById('faultDesc').textContent  = data.description;
+  document.getElementById('confidenceBadge').textContent =
+    isAnomaly ? `${data.fault_confidence}% confidence` : 'No fault detected';
+
+  // Stage results
+  document.getElementById('stage1Result').textContent = data.status;
+  document.getElementById('stage1Result').className   =
+    isAnomaly ? 'alert' : 'ok';
+  document.getElementById('stage2Result').textContent =
+    isAnomaly ? data.fault_type : 'N/A — normal';
+  document.getElementById('stage2Result').className   =
+    isAnomaly ? 'alert' : 'ok';
+
+  // Affected sensors table
+  const tbody = document.getElementById('affectedTable');
+  if (isAnomaly && data.affected_sensors &&
+      Object.keys(data.affected_sensors).length > 0) {
+    tbody.innerHTML = Object.entries(data.affected_sensors).map(([k, v]) => `
+      <tr>
+        <td class="val">${k}</td>
+        <td class="alert">${v.current}</td>
+        <td>${v.baseline}</td>
+        <td class="alert">+${v.deviation}</td>
+      </tr>
+    `).join('');
+  } else {
+    tbody.innerHTML =
+      '<tr><td colspan="4" class="ok">All parameters within normal range</td></tr>';
+  }
+
+  // Sensor value colors + deviation tags
+  const baseline = { T1:339.8, T2:339.6, T3:339.4,
+                     Ca1:1.25, Ca2:0.81, Ca3:0.50 };
+  Object.entries(baseline).forEach(([k, base]) => {
+    const el    = document.getElementById('d' + k);
+    const tagEl = document.getElementById('d' + k + 'Tag');
+    if (!el) return;
+    const current = parseFloat(el.textContent);
+    const dev     = Math.abs(current - base);
+    const isHigh  = dev > 0.1;
+    el.className  = 'sensor-value ' + (isHigh ? 'alert' : 'normal');
+    if (tagEl) {
+      tagEl.textContent = isHigh ? `+${dev.toFixed(3)}` : 'OK';
+      tagEl.className   = 'deviation-tag ' + (isHigh ? 'high' : 'ok');
+    }
+  });
+
+  // Recommended actions
+  const actDiv = document.getElementById('actionsList');
+  if (isAnomaly && data.recommended_action) {
+    actDiv.innerHTML = data.recommended_action.map((a, i) => `
+      <div class="action-item">
+        <div class="action-num">${i+1}</div>
+        <div>${a}</div>
+      </div>
+    `).join('');
+  } else {
+    actDiv.innerHTML =
+      '<div class="action-item"><div class="action-num">✓</div>' +
+      '<div>Continue normal monitoring. No intervention required.</div></div>';
+  }
+}
+
+// ── Auto-run if sensor data passed from index.html ────────────────────────
+window.onload = () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('T1')) runDiagnosis('current');
+};
+</script>
+</body>
+</html>
