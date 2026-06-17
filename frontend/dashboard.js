@@ -226,3 +226,23 @@ function updateAlarmBanner(confirmedState) {
   document.getElementById('alarmTimer').textContent =
     `Time in alarm: ${anomalyDuration}s`;
 }
+
+// ── Navigate to Diagnosis Page ────────────────────────────────────────────
+function goToDiagnosis() {
+  // Get current sensor values from dashboard
+  const sensors = {
+    Ca1: parseFloat(document.getElementById('Ca1').textContent) || 1.25,
+    Cb1: parseFloat(document.getElementById('Cb1').textContent) || 0.45,
+    T1:  parseFloat(document.getElementById('T1').textContent)  || 339.8,
+    Ca2: parseFloat(document.getElementById('Ca2').textContent) || 0.81,
+    Cb2: parseFloat(document.getElementById('Cb2').textContent) || 0.62,
+    T2:  parseFloat(document.getElementById('T2').textContent)  || 339.6,
+    Ca3: parseFloat(document.getElementById('Ca3').textContent) || 0.50,
+    Cb3: parseFloat(document.getElementById('Cb3').textContent) || 0.68,
+    T3:  parseFloat(document.getElementById('T3').textContent)  || 339.4
+  };
+
+  // Pass sensor data via URL parameters to diagnosis page
+  const params = new URLSearchParams(sensors);
+  window.location.href = `diagnose.html?${params}`;
+}
