@@ -36,6 +36,10 @@ model = joblib.load(MODEL_PATH)
 # joblib.load deserializes model.pkl back into a live sklearn IsolationForest object
 # This happens ONCE at startup — not on every request (efficient)
 
+# ── Load Fault Classifier ─────────────────────────────────────────────────────
+CLASSIFIER_PATH = os.path.join(BASE_DIR, '..', 'model', 'fault_classifier.pkl')
+classifier      = joblib.load(CLASSIFIER_PATH)
+
 # ─── Feature Definition ──────────────────────────────────────────────────────
 FEATURES = ['Ca1', 'Cb1', 'T1', 'Ca2', 'Cb2', 'T2', 'Ca3', 'Cb3', 'T3']
 # The 9 sensor readings from our 3-tank CSTR series
@@ -140,6 +144,110 @@ def example():
             "Ca3": 0.50, "Cb3": 0.68, "T3": 340.8
         }
     })
+
+# ─── Route 5: Diagnose ───────────────────────────────────────────────────────
+@app.route('/diagnose', methods=['POST'])
+def diagnose():
+    """
+    Two-stage pipeline:
+    Stage 1 — Isolation Forest: is this normal or anomaly?
+    Stage 2 — Decision Tree:    if anomaly, which fault type?
+    """
+    data = request.get_json()
+
+    # ── Validate ──────────────────────────────────────────────────────────
+    missing = [f for f in FEATURES if f not in data]
+    if missing:
+        return jsonify({
+            "error"  : "Missing sensor readings",
+            "missing": missing
+        }), 400
+
+    # ── Build feature array ───────────────────────────────────────────────
+    X = np.array([[data[f] for f in FEATURES]])
+
+    # ── Stage 1: Isolation Forest ─────────────────────────────────────────
+    prediction    = model.predict(X)[0]
+    anomaly_score = model.decision_function(X)[0]
+    is_anomaly    = prediction == -1
+
+    # ── Stage 2: Decision Tree (only if anomaly detected) ─────────────────
+    if is_anomaly:
+        fault_type  = classifier.predict(X)[0]
+        fault_proba = classifier.predict_proba(X)[0]
+        confidence  = round(float(max(fault_proba) * 100), 1)
+
+        # Map fault type to human readable description
+        fault_descriptions = {
+            'coolant_failure': 'Cooling jacket failure — heat removal compromised',
+            'feed_spike'     : 'Feed concentration surge — excess reactant entering tank 1',
+            'flow_drop'      : 'Flow rate reduction — residence time increasing',
+            'none'           : 'No specific fault pattern identified'
+        }
+
+        return jsonify({
+            "status"          : "ANOMALY",
+            "anomaly_score"   : round(float(anomaly_score), 4),
+            "fault_type"      : fault_type,
+            "fault_confidence": confidence,
+            "description"     : fault_descriptions.get(fault_type, "Unknown fault"),
+            "affected_sensors": get_affected_sensors(fault_type, data),
+            "recommended_action": get_action(fault_type),
+            "sensors"         : data
+        })
+
+    # ── Normal operation ──────────────────────────────────────────────────
+    return jsonify({
+        "status"      : "NORMAL",
+        "anomaly_score": round(float(anomaly_score), 4),
+        "fault_type"  : "none",
+        "description" : "All reactor parameters within normal operating range",
+        "sensors"     : data
+    })
+
+
+def get_affected_sensors(fault_type, data):
+    """Returns which sensors are showing abnormal readings."""
+    affected = {}
+    normal   = {
+        'T1': 339.8, 'T2': 339.6, 'T3': 339.4,
+        'Ca1': 1.25, 'Ca2': 0.81, 'Ca3': 0.50
+    }
+    for sensor, baseline in normal.items():
+        deviation = abs(data[sensor] - baseline)
+        if deviation > 0.1:
+            affected[sensor] = {
+                "current" : round(data[sensor], 4),
+                "baseline": baseline,
+                "deviation": round(deviation, 4)
+            }
+    return affected
+
+
+def get_action(fault_type):
+    """Returns recommended operator action for each fault type."""
+    actions = {
+        'coolant_failure': [
+            "Check cooling water supply valve",
+            "Inspect heat exchanger for fouling",
+            "Monitor T1 — if exceeding 341K initiate emergency cooling",
+            "Consider feed reduction to lower heat generation"
+        ],
+        'feed_spike'     : [
+            "Check feed control valve position",
+            "Inspect feed concentration analyzer",
+            "Reduce feed flow rate by 20% immediately",
+            "Monitor Ca1 and T1 for thermal runaway signs"
+        ],
+        'flow_drop'      : [
+            "Check pump operation and flow meters",
+            "Inspect feed line for blockage or valve failure",
+            "Monitor residence time — increasing τ raises conversion",
+            "Verify cooling capacity matches increased reaction time"
+        ],
+        'none'           : ["Continue monitoring — unclassified anomaly detected"]
+    }
+    return actions.get(fault_type, ["Contact process engineer immediately"])
 
 # ─── Start Server ─────────────────────────────────────────────────────────────
 if __name__ == '__main__':
