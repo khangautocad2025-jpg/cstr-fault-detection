@@ -13,37 +13,24 @@
       min-height: 100vh;
       padding: 24px;
     }
-
-    /* ── Header ── */
     .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #1e3a5f;
-      padding-bottom: 16px;
-      margin-bottom: 24px;
+      display: flex; justify-content: space-between;
+      align-items: center; border-bottom: 1px solid #1e3a5f;
+      padding-bottom: 16px; margin-bottom: 24px;
     }
     .header h1 { font-size: 18px; font-weight: 700;
                  letter-spacing: 0.1em; color: #4fc3f7;
                  text-transform: uppercase; }
     .header .subtitle { font-size: 11px; color: #546e7a;
                         margin-top: 4px; letter-spacing: 0.05em; }
-
-    /* ── Nav ── */
     nav { display: flex; gap: 16px; margin-bottom: 20px;
           border-bottom: 1px solid #1e3a5f; padding-bottom: 12px; }
-    nav a { text-decoration: none; font-size: 12px;
-            letter-spacing: 0.08em; }
-    nav a.active { color: #4fc3f7; }
+    nav a { text-decoration: none; font-size: 12px; letter-spacing: 0.08em; }
+    nav a.active   { color: #4fc3f7; }
     nav a.inactive { color: #546e7a; }
-
-    /* ── Panel ── */
     .panel {
-      background: #0d1b2a;
-      border: 1px solid #1e3a5f;
-      border-radius: 6px;
-      padding: 20px;
-      margin-bottom: 20px;
+      background: #0d1b2a; border: 1px solid #1e3a5f;
+      border-radius: 6px; padding: 20px; margin-bottom: 20px;
     }
     .panel-title {
       font-size: 10px; text-transform: uppercase;
@@ -51,8 +38,6 @@
       margin-bottom: 16px; border-bottom: 1px solid #1e3a5f;
       padding-bottom: 8px;
     }
-
-    /* ── Fault Banner ── */
     .fault-banner {
       border-radius: 6px; padding: 20px 24px;
       margin-bottom: 20px; border: 1px solid;
@@ -61,7 +46,6 @@
     .fault-banner.normal  { background: #0d2318; border-color: #1b5e20; }
     .fault-banner.anomaly { background: #2d0a0a; border-color: #b71c1c; }
     .fault-banner.loading { background: #0d1b2a; border-color: #1e3a5f; }
-
     .fault-type {
       font-size: 22px; font-weight: 700;
       letter-spacing: 0.08em; text-transform: uppercase;
@@ -69,43 +53,33 @@
     .normal  .fault-type { color: #4caf50; }
     .anomaly .fault-type { color: #ef5350; }
     .loading .fault-type { color: #546e7a; }
-
     .fault-desc { font-size: 13px; color: #90a4ae; margin-top: 6px; }
     .confidence-badge {
-      margin-left: auto; padding: 8px 16px;
-      border-radius: 4px; font-size: 13px; font-weight: 700;
+      margin-left: auto; padding: 8px 16px; border-radius: 4px;
+      font-size: 13px; font-weight: 700;
       background: #0a0f1a; border: 1px solid #1e3a5f;
     }
-
-    /* ── Grid ── */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr;
                gap: 20px; margin-bottom: 20px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr);
                gap: 16px; margin-bottom: 20px; }
-
-    /* ── Sensor Cards ── */
     .tank-label { font-size: 11px; color: #4fc3f7;
                   text-transform: uppercase; letter-spacing: 0.08em;
                   margin-bottom: 10px; font-weight: 700; }
     .sensor-row {
-      display: flex; justify-content: space-between;
-      align-items: center; padding: 6px 0;
-      border-bottom: 1px solid #0f2440; font-size: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 1px solid #0f2440; font-size: 12px;
     }
     .sensor-row:last-child { border-bottom: none; }
     .sensor-name { color: #78909c; }
     .sensor-value { font-weight: 700; color: #e0e6f0; }
     .sensor-value.alert  { color: #ef5350; }
     .sensor-value.normal { color: #4caf50; }
-
     .deviation-tag {
-      font-size: 10px; padding: 2px 6px; border-radius: 3px;
-      margin-left: 8px;
+      font-size: 10px; padding: 2px 6px; border-radius: 3px; margin-left: 8px;
     }
     .deviation-tag.high { background: #7f0000; color: #ef9a9a; }
     .deviation-tag.ok   { background: #1b5e20; color: #a5d6a7; }
-
-    /* ── Actions ── */
     .action-item {
       display: flex; gap: 12px; padding: 10px 0;
       border-bottom: 1px solid #0f2440; font-size: 13px;
@@ -118,21 +92,17 @@
       font-weight: 700; display: flex; align-items: center;
       justify-content: center; flex-shrink: 0; margin-top: 1px;
     }
-
-    /* ── Data Table ── */
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th {
       text-align: left; padding: 8px 12px; color: #546e7a;
       font-size: 10px; text-transform: uppercase;
       letter-spacing: 0.08em; border-bottom: 1px solid #1e3a5f;
     }
-    td { padding: 8px 12px; border-bottom: 1px solid #0f2440;
-         color: #90a4ae; }
-    td.val { color: #e0e6f0; font-weight: 700; }
+    td { padding: 8px 12px; border-bottom: 1px solid #0f2440; color: #90a4ae; }
+    td.val   { color: #e0e6f0; font-weight: 700; }
     td.alert { color: #ef5350; font-weight: 700; }
     td.ok    { color: #4caf50; }
-
-    /* ── Button ── */
+    td.warn  { color: #ffa726; font-weight: 700; }
     .btn {
       padding: 8px 18px; border-radius: 4px; border: none;
       font-family: 'Courier New', monospace; font-size: 12px;
@@ -144,8 +114,25 @@
     .btn-primary { background: #1e3a5f; color: #90caf9; }
     .btn-fault   { background: #7f0000; color: #ef9a9a; }
     .btn-normal  { background: #1b5e20; color: #a5d6a7; }
-
+    .btn-clear   { background: #2a1a00; color: #ffa726; }
     .loading-text { color: #546e7a; font-size: 13px; }
+
+    /* ── Log Table scroll ── */
+    .log-wrapper { max-height: 300px; overflow-y: auto; }
+    .log-wrapper::-webkit-scrollbar { width: 4px; }
+    .log-wrapper::-webkit-scrollbar-track { background: #0a0f1a; }
+    .log-wrapper::-webkit-scrollbar-thumb { background: #1e3a5f; }
+
+    /* ── Status badge in log ── */
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 3px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+    }
+    .badge-normal   { background: #1b5e20; color: #a5d6a7; }
+    .badge-anomaly  { background: #7f0000; color: #ef9a9a; }
+    .badge-coolant  { background: #4a235a; color: #ce93d8; }
+    .badge-feed     { background: #1a3300; color: #aed581; }
+    .badge-flow     { background: #003366; color: #90caf9; }
   </style>
 </head>
 <body>
@@ -155,7 +142,7 @@
   <div>
     <h1>⚙ Fault Diagnosis System</h1>
     <div class="subtitle">
-      3-Tank CSTR Series · Two-Stage AI Pipeline · 
+      3-Tank CSTR Series · Two-Stage AI Pipeline ·
       Isolation Forest + Decision Tree
     </div>
   </div>
@@ -164,20 +151,31 @@
 
 <!-- ── Navigation ── -->
 <nav>
-  <a href="index.html"    class="inactive">⬡ LIVE MONITOR</a>
-  <a href="diagnose.html" class="active">⚙ FAULT DIAGNOSIS</a>
+  <a href="index.html"      class="inactive">⬡ LIVE MONITOR</a>
+  <a href="diagnosis.html"  class="active">⚙ FAULT DIAGNOSIS</a>
 </nav>
 
 <!-- ── Controls ── -->
-<button class="btn btn-normal" onclick="runDiagnosis('normal')">
-  ▶ Test Normal
-</button>
-<button class="btn btn-fault" onclick="runDiagnosis('fault')">
-  ⚠ Test Fault
-</button>
-<button class="btn btn-primary" onclick="runDiagnosis('current')">
-  ↻ Run from Live Data
-</button>
+<div style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:8px;">
+  <button class="btn btn-normal" onclick="runDiagnosis('normal')">
+    ▶ Test Normal
+  </button>
+  <button class="btn btn-fault" onclick="runDiagnosis('coolant')">
+    🌡 Coolant Failure
+  </button>
+  <button class="btn btn-fault" onclick="runDiagnosis('feed')">
+    ⚗ Feed Spike
+  </button>
+  <button class="btn btn-fault" onclick="runDiagnosis('flow')">
+    💧 Flow Drop
+  </button>
+  <button class="btn btn-primary" onclick="runDiagnosis('current')">
+    ↻ Run from Live Data
+  </button>
+  <button class="btn btn-clear" onclick="clearLog()">
+    🗑 Clear Log
+  </button>
+</div>
 
 <!-- ── Fault Banner ── -->
 <div class="fault-banner loading" id="faultBanner">
@@ -250,17 +248,11 @@
 
 <!-- ── Diagnosis Details ── -->
 <div class="grid-2">
-  <!-- Affected Parameters -->
   <div class="panel">
     <div class="panel-title">Affected Parameters</div>
     <table>
       <thead>
-        <tr>
-          <th>Sensor</th>
-          <th>Current</th>
-          <th>Baseline</th>
-          <th>Deviation</th>
-        </tr>
+        <tr><th>Sensor</th><th>Current</th><th>Baseline</th><th>Deviation</th></tr>
       </thead>
       <tbody id="affectedTable">
         <tr><td colspan="4" class="loading-text">
@@ -269,8 +261,6 @@
       </tbody>
     </table>
   </div>
-
-  <!-- Recommended Actions -->
   <div class="panel">
     <div class="panel-title">Recommended Operator Actions</div>
     <div id="actionsList">
@@ -279,17 +269,12 @@
   </div>
 </div>
 
-<!-- ── AI Pipeline Info ── -->
+<!-- ── AI Pipeline ── -->
 <div class="panel">
   <div class="panel-title">AI Pipeline — Two Stage Detection</div>
   <table>
     <thead>
-      <tr>
-        <th>Stage</th>
-        <th>Model</th>
-        <th>Job</th>
-        <th>Result</th>
-      </tr>
+      <tr><th>Stage</th><th>Model</th><th>Job</th><th>Result</th></tr>
     </thead>
     <tbody>
       <tr>
@@ -308,6 +293,33 @@
   </table>
 </div>
 
+<!-- ── Data Log ── -->
+<div class="panel">
+  <div class="panel-title">
+    Live Data Log — History from Monitor
+    <span id="logCount" style="color:#4fc3f7; margin-left:8px;">0 entries</span>
+  </div>
+  <div class="log-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Ca1</th><th>T1</th>
+          <th>Ca2</th><th>T2</th>
+          <th>Ca3</th><th>T3</th>
+          <th>Score</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="logTable">
+        <tr><td colspan="9" class="loading-text">
+          No data yet — run simulation on Live Monitor first
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <script>
 // ── Clock ─────────────────────────────────────────────────────────────────
 setInterval(() => {
@@ -317,19 +329,35 @@ setInterval(() => {
 
 // ── Sensor Presets ────────────────────────────────────────────────────────
 const NORMAL_SENSORS = {
-  Ca1:1.25, Cb1:0.45, T1:339.8,
-  Ca2:0.81, Cb2:0.62, T2:339.6,
-  Ca3:0.50, Cb3:0.68, T3:339.4
+  Ca1:1.25,  Cb1:0.45, T1:339.8,
+  Ca2:0.81,  Cb2:0.62, T2:339.6,
+  Ca3:0.50,  Cb3:0.68, T3:339.4
 };
-const FAULT_SENSORS = {
-  Ca1:1.25, Cb1:0.45, T1:341.5,
-  Ca2:0.81, Cb2:0.62, T2:341.2,
-  Ca3:0.50, Cb3:0.68, T3:340.8
+const COOLANT_SENSORS = {
+  Ca1: 1.234,  // mean of Ca1 during coolant failure (from CSV describe)
+  Cb1: 0.498,  // mean of Cb1 during coolant failure
+  T1:  340.433,// mean T1 during coolant failure — higher than normal 339.8
+  Ca2: 0.766,  // mean Ca2 during coolant failure
+  Cb2: 0.709,  // CRITICAL — must be > 0.71 threshold the tree uses
+  T2:  340.251,// mean T2 during coolant failure
+  Ca3: 0.478,  // mean Ca3 during coolant failure
+  Cb3: 0.707,  // mean Cb3 during coolant failure
+  T3:  340.063 // mean T3 during coolant failure
+}
+const FEED_SPIKE_SENSORS = {
+  Ca1:2.510, Cb1:0.45, T1:339.859,
+  Ca2:1.582, Cb2:0.62, T2:339.704,
+  Ca3:1.002, Cb3:0.68, T3:339.539
+};
+const FLOW_DROP_SENSORS = {
+  Ca1:0.923, Cb1:0.45, T1:339.653,
+  Ca2:0.432, Cb2:0.62, T2:339.310,
+  Ca3:0.205, Cb3:0.68, T3:338.993
 };
 
-// ── Load sensor data from URL params (passed from index.html) ─────────────
+// ── Load URL params ───────────────────────────────────────────────────────
 function getSensorsFromURL() {
-  const params = new URLSearchParams(window.location.search);
+  const params  = new URLSearchParams(window.location.search);
   const sensors = {};
   ['Ca1','Cb1','T1','Ca2','Cb2','T2','Ca3','Cb3','T3'].forEach(k => {
     sensors[k] = parseFloat(params.get(k)) || NORMAL_SENSORS[k];
@@ -341,17 +369,18 @@ function getSensorsFromURL() {
 async function runDiagnosis(mode) {
   let sensors;
   if      (mode === 'normal')  sensors = NORMAL_SENSORS;
-  else if (mode === 'fault')   sensors = FAULT_SENSORS;
+  else if (mode === 'coolant') sensors = COOLANT_SENSORS;
+  else if (mode === 'feed')    sensors = FEED_SPIKE_SENSORS;
+  else if (mode === 'flow')    sensors = FLOW_DROP_SENSORS;
   else                         sensors = getSensorsFromURL();
 
-  // Update sensor display
   ['Ca1','Cb1','T1','Ca2','Cb2','T2','Ca3','Cb3','T3'].forEach(k => {
     const el = document.getElementById('d' + k);
     if (el) el.textContent = sensors[k].toFixed(4);
   });
 
   try {
-    const res  = await fetch('http://127.0.0.1:5000/diagnose', {
+    const res  = await fetch('http://127.0.0.1:5000/diagnosis', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body   : JSON.stringify(sensors)
@@ -365,29 +394,27 @@ async function runDiagnosis(mode) {
   }
 }
 
-// ── Render Results ────────────────────────────────────────────────────────
+// ── Render Diagnosis ──────────────────────────────────────────────────────
 function renderDiagnosis(data) {
   const banner    = document.getElementById('faultBanner');
   const isAnomaly = data.status === 'ANOMALY';
 
-  // Banner
   banner.className = 'fault-banner ' + (isAnomaly ? 'anomaly' : 'normal');
   document.getElementById('faultType').textContent =
-    isAnomaly ? data.fault_type.replace('_', ' ').toUpperCase() : '✅ NORMAL OPERATION';
-  document.getElementById('faultDesc').textContent  = data.description;
+    isAnomaly
+      ? data.fault_type.replace(/_/g, ' ').toUpperCase()
+      : '✅ NORMAL OPERATION';
+  document.getElementById('faultDesc').textContent = data.description;
   document.getElementById('confidenceBadge').textContent =
     isAnomaly ? `${data.fault_confidence}% confidence` : 'No fault detected';
 
-  // Stage results
   document.getElementById('stage1Result').textContent = data.status;
-  document.getElementById('stage1Result').className   =
-    isAnomaly ? 'alert' : 'ok';
+  document.getElementById('stage1Result').className   = isAnomaly ? 'alert' : 'ok';
   document.getElementById('stage2Result').textContent =
     isAnomaly ? data.fault_type : 'N/A — normal';
-  document.getElementById('stage2Result').className   =
-    isAnomaly ? 'alert' : 'ok';
+  document.getElementById('stage2Result').className   = isAnomaly ? 'alert' : 'ok';
 
-  // Affected sensors table
+  // Affected sensors
   const tbody = document.getElementById('affectedTable');
   if (isAnomaly && data.affected_sensors &&
       Object.keys(data.affected_sensors).length > 0) {
@@ -404,9 +431,11 @@ function renderDiagnosis(data) {
       '<tr><td colspan="4" class="ok">All parameters within normal range</td></tr>';
   }
 
-  // Sensor value colors + deviation tags
-  const baseline = { T1:339.8, T2:339.6, T3:339.4,
-                     Ca1:1.25, Ca2:0.81, Ca3:0.50 };
+  // Deviation tags on sensor cards
+  const baseline = {
+    T1:339.8, T2:339.6, T3:339.4,
+    Ca1:1.25, Ca2:0.81, Ca3:0.50
+  };
   Object.entries(baseline).forEach(([k, base]) => {
     const el    = document.getElementById('d' + k);
     const tagEl = document.getElementById('d' + k + 'Tag');
@@ -421,7 +450,7 @@ function renderDiagnosis(data) {
     }
   });
 
-  // Recommended actions
+  // Actions
   const actDiv = document.getElementById('actionsList');
   if (isAnomaly && data.recommended_action) {
     actDiv.innerHTML = data.recommended_action.map((a, i) => `
@@ -437,8 +466,56 @@ function renderDiagnosis(data) {
   }
 }
 
-// ── Auto-run if sensor data passed from index.html ────────────────────────
+// ── Data Log from sessionStorage ──────────────────────────────────────────
+function getStatusBadge(status) {
+  if (status === 'NORMAL')  return '<span class="badge badge-normal">Normal</span>';
+  return '<span class="badge badge-anomaly">Anomaly</span>';
+}
+
+function loadLog() {
+  const raw  = sessionStorage.getItem('cstr_log');
+  if (!raw) return;
+  const log  = JSON.parse(raw);
+  const tbody = document.getElementById('logTable');
+  document.getElementById('logCount').textContent = `${log.length} entries`;
+
+  if (log.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="9" class="loading-text">No data yet</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = log.map(e => {
+    const scoreClass = e.score < 0 ? 'alert' : 'ok';
+    return `
+      <tr>
+        <td class="val">${e.time}</td>
+        <td>${e.Ca1?.toFixed(3) ?? '—'}</td>
+        <td class="${e.T1 > 340 ? 'alert' : 'ok'}">${e.T1?.toFixed(3) ?? '—'}</td>
+        <td>${e.Ca2?.toFixed(3) ?? '—'}</td>
+        <td class="${e.T2 > 340 ? 'alert' : 'ok'}">${e.T2?.toFixed(3) ?? '—'}</td>
+        <td>${e.Ca3?.toFixed(3) ?? '—'}</td>
+        <td class="${e.T3 > 340 ? 'alert' : 'ok'}">${e.T3?.toFixed(3) ?? '—'}</td>
+        <td class="${scoreClass}">${e.score?.toFixed(4) ?? '—'}</td>
+        <td>${getStatusBadge(e.status)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function clearLog() {
+  sessionStorage.removeItem('cstr_log');
+  document.getElementById('logTable').innerHTML =
+    '<tr><td colspan="9" class="loading-text">Log cleared</td></tr>';
+  document.getElementById('logCount').textContent = '0 entries';
+}
+
+// ── Auto refresh log every 2s ─────────────────────────────────────────────
+setInterval(loadLog, 2000);
+
+// ── On load ───────────────────────────────────────────────────────────────
 window.onload = () => {
+  loadLog();
   const params = new URLSearchParams(window.location.search);
   if (params.has('T1')) runDiagnosis('current');
 };

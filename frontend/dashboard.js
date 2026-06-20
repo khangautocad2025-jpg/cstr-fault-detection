@@ -1,10 +1,10 @@
 let anomalyCount = 0;
 let normalCount  = 0;
-const CONFIRM_THRESHOLD = 3;// must see 3 consecutive readings before switching
+const CONFIRM_THRESHOLD = 3;
 
-let anomalyStartTime  = null;  // when did anomaly begin
-let anomalyDuration   = 0;     // how long in seconds
-let alarmLevel        = 'NONE'; // NONE → WATCH → WARNING → CRITICAL
+let anomalyStartTime = null;
+let anomalyDuration  = 0;
+let alarmLevel       = 'NONE';
 
 // ── Chart Setup ──────────────────────────────────────────────────────────────
 const MAX_POINTS = 40;
@@ -24,16 +24,20 @@ function makeChart(id, datasets, yLabel) {
              grid:  { color: '#0f2440' } },
         y: { ticks: { color: '#546e7a', font: { size: 9 } },
              grid:  { color: '#0f2440' },
-             title: { display: true, text: yLabel, color: '#546e7a', font: { size: 9 } } }
+             title: { display: true, text: yLabel, color: '#546e7a',
+                      font: { size: 9 } } }
       }
     }
   });
 }
 
 const tempData = [
-  { label: 'T1', data: [], borderColor: '#ef5350', borderWidth: 1.5, pointRadius: 0, tension: 0.3 },
-  { label: 'T2', data: [], borderColor: '#ffa726', borderWidth: 1.5, pointRadius: 0, tension: 0.3 },
-  { label: 'T3', data: [], borderColor: '#4fc3f7', borderWidth: 1.5, pointRadius: 0, tension: 0.3 }
+  { label: 'T1', data: [], borderColor: '#ef5350', borderWidth: 1.5,
+    pointRadius: 0, tension: 0.3 },
+  { label: 'T2', data: [], borderColor: '#ffa726', borderWidth: 1.5,
+    pointRadius: 0, tension: 0.3 },
+  { label: 'T3', data: [], borderColor: '#4fc3f7', borderWidth: 1.5,
+    pointRadius: 0, tension: 0.3 }
 ];
 const scoreData = [
   { label: 'Anomaly Score', data: [], borderColor: '#ab47bc',
@@ -74,41 +78,31 @@ async function predict(sensors) {
     updateDashboard(sensors, data);
   } catch (e) {
     document.getElementById('statusLabel').textContent = 'API OFFLINE';
-    document.getElementById('statusMsg').textContent   = 'Make sure Flask is running on port 5000';
+    document.getElementById('statusMsg').textContent   =
+      'Make sure Flask is running on port 5000';
   }
 }
 
-// ── Update Dashboard ─────────────────────────────────────────────────────────
-// ── Confirmation Window ───────────────────────────────────────────────────
+// ── Update Dashboard ──────────────────────────────────────────────────────────
 function updateDashboard(sensors, result) {
   const isAnomaly = result.status === 'ANOMALY';
 
-  // Count consecutive readings
-  if (isAnomaly) {
-    anomalyCount++;
-    normalCount = 0;
-  } else {
-    normalCount++;
-    anomalyCount = 0;
-  }
+  if (isAnomaly) { anomalyCount++; normalCount = 0; }
+  else           { normalCount++;  anomalyCount = 0; }
 
-  // Only switch state after 3 consecutive same readings
   let confirmedState = null;
   if (anomalyCount >= CONFIRM_THRESHOLD) confirmedState = 'ANOMALY';
   if (normalCount  >= CONFIRM_THRESHOLD) confirmedState = 'NORMAL';
   if (!confirmedState) return;
 
-  // ── replaced old banner lines with Time-In-Alarm ──
   updateAlarmLevel(confirmedState);
 
   document.getElementById('anomalyScore').textContent =
     (result.anomaly_score >= 0 ? '+' : '') + result.anomaly_score.toFixed(4);
 
-  // Sensor cards
   ['Ca1','Cb1','Ca2','Cb2','Ca3','Cb3'].forEach(k => updateSensor(k, sensors[k]));
   ['T1','T2','T3'].forEach(k => updateSensor(k, sensors[k], confirmedState === 'ANOMALY'));
 
-  // Charts
   const t = new Date().toLocaleTimeString();
   push(labels, t);
   push(tempData[0].data, sensors.T1);
@@ -118,20 +112,37 @@ function updateDashboard(sensors, result) {
 
   tempChart.update();
   scoreChart.update();
+
+  // ── Log to history for diagnosis page ────────────────────────────────
+  logReading(sensors, result, confirmedState);
 }
 
-// ── Simulation ───────────────────────────────────────────────────────────────
-let simInterval = null;
-
+// ── Sensor Presets ────────────────────────────────────────────────────────────
 const NORMAL_SENSORS = {
-  Ca1:1.25, Cb1:0.45, T1:339.8,
-  Ca2:0.81, Cb2:0.62, T2:339.6,
-  Ca3:0.50, Cb3:0.68, T3:339.4
+  Ca1:1.25,  Cb1:0.45, T1:339.8,
+  Ca2:0.81,  Cb2:0.62, T2:339.6,
+  Ca3:0.50,  Cb3:0.68, T3:339.4
 };
-const FAULT_SENSORS = {
-  Ca1:1.25, Cb1:0.45, T1:341.5,
-  Ca2:0.81, Cb2:0.62, T2:341.2,
-  Ca3:0.50, Cb3:0.68, T3:340.8
+const COOLANT_SENSORS = {
+  Ca1: 1.234,  // mean of Ca1 during coolant failure (from CSV describe)
+  Cb1: 0.498,  // mean of Cb1 during coolant failure
+  T1:  340.433,// mean T1 during coolant failure — higher than normal 339.8
+  Ca2: 0.766,  // mean Ca2 during coolant failure
+  Cb2: 0.709,  // CRITICAL — must be > 0.71 threshold the tree uses
+  T2:  340.251,// mean T2 during coolant failure
+  Ca3: 0.478,  // mean Ca3 during coolant failure
+  Cb3: 0.707,  // mean Cb3 during coolant failure
+  T3:  340.063 // mean T3 during coolant failure
+}
+const FEED_SPIKE_SENSORS = {
+  Ca1:2.510, Cb1:0.45, T1:339.859,
+  Ca2:1.582, Cb2:0.62, T2:339.704,
+  Ca3:1.002, Cb3:0.68, T3:339.539
+};
+const FLOW_DROP_SENSORS = {
+  Ca1:0.923, Cb1:0.45, T1:339.653,
+  Ca2:0.432, Cb2:0.62, T2:339.310,
+  Ca3:0.205, Cb3:0.68, T3:338.993
 };
 
 function addNoise(sensors, scale=0.02) {
@@ -142,18 +153,28 @@ function addNoise(sensors, scale=0.02) {
   return out;
 }
 
+// ── Simulation ────────────────────────────────────────────────────────────────
+let simInterval = null;
+
 function sendNormal() {
   stopSim();
   document.getElementById('updateRate').textContent = 'Interval: 1.5s — Normal mode';
-  simInterval = setInterval(() => predict(addNoise(NORMAL_SENSORS,0.005)), 1500);
-  predict(addNoise(NORMAL_SENSORS,0.005));
+  simInterval = setInterval(() => predict(addNoise(NORMAL_SENSORS, 0.005)), 1500);
+  predict(addNoise(NORMAL_SENSORS, 0.005));
 }
 
-function sendFault() {
+function sendFault(type) {
   stopSim();
-  document.getElementById('updateRate').textContent = 'Interval: 1.5s — FAULT mode';
-  simInterval = setInterval(() => predict(addNoise(FAULT_SENSORS, 0.05)), 1500);
-  predict(addNoise(FAULT_SENSORS, 0.05));
+  let sensors;
+  if      (type === 'coolant') sensors = COOLANT_SENSORS;
+  else if (type === 'feed')    sensors = FEED_SPIKE_SENSORS;
+  else if (type === 'flow')    sensors = FLOW_DROP_SENSORS;
+  else                         sensors = COOLANT_SENSORS;
+
+  document.getElementById('updateRate').textContent =
+    `Interval: 1.5s — ${type.toUpperCase()} FAULT mode`;
+  simInterval = setInterval(() => predict(addNoise(sensors, 0.005)), 1500);
+  predict(addNoise(sensors, 0.005));
 }
 
 function stopSim() {
@@ -161,28 +182,38 @@ function stopSim() {
   document.getElementById('updateRate').textContent = 'Interval: stopped';
 }
 
-// ── Time-In-Alarm Logic ───────────────────────────────────────────────────
+// ── Data Log — shared history for diagnosis page ──────────────────────────────
+const MAX_LOG = 100;  // keep last 100 readings
+const dataLog = [];
+
+function logReading(sensors, result, confirmedState) {
+  const entry = {
+    time     : new Date().toLocaleTimeString(),
+    ...sensors,
+    score    : result.anomaly_score,
+    status   : confirmedState
+  };
+  dataLog.unshift(entry);              // newest first
+  if (dataLog.length > MAX_LOG) dataLog.pop();
+  // Save to sessionStorage so diagnosis page can read it
+  sessionStorage.setItem('cstr_log', JSON.stringify(dataLog));
+}
+
+// ── Time-In-Alarm ─────────────────────────────────────────────────────────────
 function updateAlarmLevel(confirmedState) {
   const now = Date.now();
-
   if (confirmedState === 'ANOMALY') {
-    // Start timer if not already running
     if (!anomalyStartTime) anomalyStartTime = now;
     anomalyDuration = Math.floor((now - anomalyStartTime) / 1000);
-
-    // Escalate based on duration
     if      (anomalyDuration >= 120) alarmLevel = 'CRITICAL';
     else if (anomalyDuration >= 30)  alarmLevel = 'WARNING';
     else if (anomalyDuration >= 5)   alarmLevel = 'WATCH';
     else                             alarmLevel = 'NONE';
-
   } else {
-    // Reset when normal restored
     anomalyStartTime = null;
     anomalyDuration  = 0;
     alarmLevel       = 'NONE';
   }
-
   updateAlarmBanner(confirmedState);
 }
 
@@ -192,16 +223,15 @@ function updateAlarmBanner(confirmedState) {
   const msg    = document.getElementById('statusMsg');
 
   if (confirmedState === 'NORMAL') {
-    banner.style.background   = '#0d2318';
-    banner.style.borderColor  = '#1b5e20';
-    label.style.color         = '#4caf50';
-    label.textContent         = '✅ NORMAL';
-    msg.textContent           = 'Reactor operating within safe parameters';
+    banner.style.background  = '#0d2318';
+    banner.style.borderColor = '#1b5e20';
+    label.style.color        = '#4caf50';
+    label.textContent        = '✅ NORMAL';
+    msg.textContent          = 'Reactor operating within safe parameters';
     document.getElementById('alarmTimer').textContent = '';
     return;
   }
 
-  // Anomaly — show escalating alarm
   const configs = {
     'NONE'    : { bg: '#1a1200', border: '#f9a825', color: '#f9a825',
                   text: '👁 WATCH',
@@ -227,22 +257,19 @@ function updateAlarmBanner(confirmedState) {
     `Time in alarm: ${anomalyDuration}s`;
 }
 
-// ── Navigate to Diagnosis Page ────────────────────────────────────────────
+// ── Navigate to Diagnosis Page ────────────────────────────────────────────────
 function goToDiagnosis() {
-  // Get current sensor values from dashboard
   const sensors = {
-    Ca1: parseFloat(document.getElementById('Ca1').textContent) || 1.25,
-    Cb1: parseFloat(document.getElementById('Cb1').textContent) || 0.45,
-    T1:  parseFloat(document.getElementById('T1').textContent)  || 339.8,
-    Ca2: parseFloat(document.getElementById('Ca2').textContent) || 0.81,
-    Cb2: parseFloat(document.getElementById('Cb2').textContent) || 0.62,
-    T2:  parseFloat(document.getElementById('T2').textContent)  || 339.6,
-    Ca3: parseFloat(document.getElementById('Ca3').textContent) || 0.50,
-    Cb3: parseFloat(document.getElementById('Cb3').textContent) || 0.68,
-    T3:  parseFloat(document.getElementById('T3').textContent)  || 339.4
+    Ca1: parseFloat(document.getElementById('Ca1').textContent) || NORMAL_SENSORS.Ca1,
+    Cb1: parseFloat(document.getElementById('Cb1').textContent) || NORMAL_SENSORS.Cb1,
+    T1:  parseFloat(document.getElementById('T1').textContent)  || NORMAL_SENSORS.T1,
+    Ca2: parseFloat(document.getElementById('Ca2').textContent) || NORMAL_SENSORS.Ca2,
+    Cb2: parseFloat(document.getElementById('Cb2').textContent) || NORMAL_SENSORS.Cb2,
+    T2:  parseFloat(document.getElementById('T2').textContent)  || NORMAL_SENSORS.T2,
+    Ca3: parseFloat(document.getElementById('Ca3').textContent) || NORMAL_SENSORS.Ca3,
+    Cb3: parseFloat(document.getElementById('Cb3').textContent) || NORMAL_SENSORS.Cb3,
+    T3:  parseFloat(document.getElementById('T3').textContent)  || NORMAL_SENSORS.T3,
   };
-
-  // Pass sensor data via URL parameters to diagnosis page
   const params = new URLSearchParams(sensors);
   window.location.href = `diagnosis.html?${params}`;
 }

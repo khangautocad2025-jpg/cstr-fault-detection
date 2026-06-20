@@ -146,12 +146,16 @@ def example():
     })
 
 # ─── Route 5: Diagnose ───────────────────────────────────────────────────────
-@app.route('/diagnose', methods=['POST'])
-def diagnose():
+@app.route('/diagnosis', methods=['POST'])
+def diagnosis():
     """
-    Two-stage pipeline:
-    Stage 1 — Isolation Forest: is this normal or anomaly?
-    Stage 2 — Decision Tree:    if anomaly, which fault type?
+    Two-stage pipeline — INDEPENDENT mode:
+    Stage 1 — Isolation Forest: anomaly detection
+    Stage 2 — Decision Tree:    always runs, regardless of Stage 1
+    
+    Both models read independently — Decision Tree is not gated
+    by Isolation Forest result. This prevents IF false negatives
+    from silencing the classifier (e.g. flow drop case).
     """
     data = request.get_json()
 
@@ -166,43 +170,58 @@ def diagnose():
     # ── Build feature array ───────────────────────────────────────────────
     X = np.array([[data[f] for f in FEATURES]])
 
-    # ── Stage 1: Isolation Forest ─────────────────────────────────────────
+    # ── Stage 1: Isolation Forest — always runs ───────────────────────────
     prediction    = model.predict(X)[0]
     anomaly_score = model.decision_function(X)[0]
     is_anomaly    = prediction == -1
 
-    # ── Stage 2: Decision Tree (only if anomaly detected) ─────────────────
-    if is_anomaly:
-        fault_type  = classifier.predict(X)[0]
-        fault_proba = classifier.predict_proba(X)[0]
-        confidence  = round(float(max(fault_proba) * 100), 1)
+    # ── Stage 2: Decision Tree — always runs independently ────────────────
+    fault_type  = classifier.predict(X)[0]
+    fault_proba = classifier.predict_proba(X)[0]
+    confidence  = round(float(max(fault_proba) * 100), 1)
 
-        # Map fault type to human readable description
-        fault_descriptions = {
-            'coolant_failure': 'Cooling jacket failure — heat removal compromised',
-            'feed_spike'     : 'Feed concentration surge — excess reactant entering tank 1',
-            'flow_drop'      : 'Flow rate reduction — residence time increasing',
-            'none'           : 'No specific fault pattern identified'
-        }
+    fault_descriptions = {
+        'coolant_failure': 'Cooling jacket failure — heat removal compromised',
+        'feed_spike'     : 'Feed concentration surge — excess reactant entering tank 1',
+        'flow_drop'      : 'Flow rate reduction — residence time increasing',
+        'none'           : 'No specific fault pattern identified'
+    }
 
-        return jsonify({
-            "status"          : "ANOMALY",
-            "anomaly_score"   : round(float(anomaly_score), 4),
-            "fault_type"      : fault_type,
-            "fault_confidence": confidence,
-            "description"     : fault_descriptions.get(fault_type, "Unknown fault"),
-            "affected_sensors": get_affected_sensors(fault_type, data),
-            "recommended_action": get_action(fault_type),
-            "sensors"         : data
-        })
+    # ── Determine final status ────────────────────────────────────────────
+    # Use Decision Tree as primary classifier on diagnosis page
+    # Isolation Forest result shown as secondary reference
+    if fault_type != 'none':
+        # Decision Tree found a specific fault — trust it
+        final_status = 'ANOMALY'
+        final_fault  = fault_type
+    elif is_anomaly:
+        # Isolation Forest flagged anomaly but DT couldn't classify it
+        final_status = 'ANOMALY'
+        final_fault  = 'unidentified'
+    else:
+        # Both agree — normal
+        final_status = 'NORMAL'
+        final_fault  = 'none'
 
-    # ── Normal operation ──────────────────────────────────────────────────
     return jsonify({
-        "status"      : "NORMAL",
-        "anomaly_score": round(float(anomaly_score), 4),
-        "fault_type"  : "none",
-        "description" : "All reactor parameters within normal operating range",
-        "sensors"     : data
+        "status"            : final_status,
+        "anomaly_score"     : round(float(anomaly_score), 4),
+        "fault_type"        : final_fault,
+        "fault_confidence"  : confidence,
+        "description"       : fault_descriptions.get(final_fault,
+                              "Anomaly detected — pattern unclassified"),
+        "affected_sensors"  : get_affected_sensors(final_fault, data),
+        "recommended_action": get_action(final_fault),
+        # ── Show both model results separately ────────────────────────────
+        "isolation_forest"  : {
+            "prediction"   : "ANOMALY" if is_anomaly else "NORMAL",
+            "anomaly_score": round(float(anomaly_score), 4)
+        },
+        "decision_tree"     : {
+            "fault_type"  : fault_type,
+            "confidence"  : confidence
+        },
+        "sensors"           : data
     })
 
 
@@ -225,7 +244,6 @@ def get_affected_sensors(fault_type, data):
 
 
 def get_action(fault_type):
-    """Returns recommended operator action for each fault type."""
     actions = {
         'coolant_failure': [
             "Check cooling water supply valve",
@@ -245,10 +263,15 @@ def get_action(fault_type):
             "Monitor residence time — increasing τ raises conversion",
             "Verify cooling capacity matches increased reaction time"
         ],
-        'none'           : ["Continue monitoring — unclassified anomaly detected"]
+        'unidentified'   : [
+            "Contact process engineer immediately",
+            "Cross-reference all sensor readings manually",
+            "Consider controlled shutdown if deviation persists",
+            "Check for sensor drift or instrumentation failure"
+        ],
+        'none'           : ["Continue monitoring — no fault detected"]
     }
     return actions.get(fault_type, ["Contact process engineer immediately"])
-
 # ─── Start Server ─────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

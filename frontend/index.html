@@ -6,9 +6,7 @@
   <title>CSTR Fault Detection — Control Room</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
-    /* ── Base ── */
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       background: #0a0f1a;
       color: #e0e6f0;
@@ -16,8 +14,6 @@
       min-height: 100vh;
       padding: 24px;
     }
-
-    /* ── Header ── */
     .header {
       display: flex;
       justify-content: space-between;
@@ -27,162 +23,80 @@
       margin-bottom: 24px;
     }
     .header h1 {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      color: #4fc3f7;
+      font-size: 18px; font-weight: 700;
+      letter-spacing: 0.1em; color: #4fc3f7;
       text-transform: uppercase;
     }
     .header .subtitle {
-      font-size: 11px;
-      color: #546e7a;
-      margin-top: 4px;
-      letter-spacing: 0.05em;
+      font-size: 11px; color: #546e7a;
+      margin-top: 4px; letter-spacing: 0.05em;
     }
-    .clock {
-      font-size: 13px;
-      color: #546e7a;
-      text-align: right;
-    }
-
-    /* ── Status Banner ── */
+    .clock { font-size: 13px; color: #546e7a; text-align: right; }
     .status-banner {
-      border-radius: 6px;
-      padding: 16px 24px;
-      margin-bottom: 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      transition: all 0.4s ease;
-      border: 1px solid;
+      border-radius: 6px; padding: 16px 24px;
+      margin-bottom: 24px; display: flex;
+      align-items: center; gap: 16px;
+      transition: all 0.4s ease; border: 1px solid;
     }
-    .status-banner.normal {
-      background: #0d2318;
-      border-color: #1b5e20;
-    }
+    .status-banner.normal  { background: #0d2318; border-color: #1b5e20; }
     .status-banner.anomaly {
-      background: #2d0a0a;
-      border-color: #b71c1c;
+      background: #2d0a0a; border-color: #b71c1c;
       animation: pulse 1s infinite;
     }
     @keyframes pulse {
       0%, 100% { border-color: #b71c1c; }
       50%       { border-color: #ef5350; }
     }
-    .status-dot {
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
+    .status-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
     .normal  .status-dot { background: #4caf50; box-shadow: 0 0 8px #4caf50; }
     .anomaly .status-dot { background: #ef5350; box-shadow: 0 0 8px #ef5350; }
     .status-text { flex: 1; }
-    .status-label {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-    }
+    .status-label { font-size: 15px; font-weight: 700; letter-spacing: 0.08em; }
     .normal  .status-label { color: #4caf50; }
     .anomaly .status-label { color: #ef5350; }
     .status-msg { font-size: 12px; color: #90a4ae; margin-top: 2px; }
-    
-    .anomaly-score {
-      font-size: 22px;
-      font-weight: 700;
-      font-family: 'Courier New', monospace;
-    }
+    .anomaly-score { font-size: 22px; font-weight: 700; font-family: 'Courier New', monospace; }
     .normal  .anomaly-score { color: #4caf50; }
     .anomaly .anomaly-score { color: #ef5350; }
-
-    /* ── Grid ── */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    /* ── Panel ── */
-    .panel {
-      background: #0d1b2a;
-      border: 1px solid #1e3a5f;
-      border-radius: 6px;
-      padding: 16px;
-    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .panel { background: #0d1b2a; border: 1px solid #1e3a5f; border-radius: 6px; padding: 16px; }
     .panel-title {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: #546e7a;
-      margin-bottom: 14px;
-      border-bottom: 1px solid #1e3a5f;
-      padding-bottom: 8px;
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #546e7a;
+      margin-bottom: 14px; border-bottom: 1px solid #1e3a5f; padding-bottom: 8px;
     }
-
-    /* ── Tank Cards ── */
     .tank-label {
-      font-size: 11px;
-      color: #4fc3f7;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 10px;
-      font-weight: 700;
+      font-size: 11px; color: #4fc3f7;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 10px; font-weight: 700;
     }
     .sensor-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 0;
-      border-bottom: 1px solid #0f2440;
-      font-size: 12px;
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 5px 0;
+      border-bottom: 1px solid #0f2440; font-size: 12px;
     }
     .sensor-row:last-child { border-bottom: none; }
     .sensor-name { color: #78909c; }
     .sensor-value {
-      font-weight: 700;
-      font-family: 'Courier New', monospace;
-      color: #e0e6f0;
-      transition: color 0.3s;
+      font-weight: 700; font-family: 'Courier New', monospace;
+      color: #e0e6f0; transition: color 0.3s;
     }
     .sensor-value.alert { color: #ef5350; }
-
-    /* ── Chart ── */
     .chart-container { position: relative; height: 220px; }
-
-    /* ── Controls ── */
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      align-items: center;
-    }
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
     .btn {
-      padding: 8px 18px;
-      border-radius: 4px;
-      border: none;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      cursor: pointer;
-      text-transform: uppercase;
-      transition: opacity 0.2s;
+      padding: 8px 18px; border-radius: 4px; border: none;
+      font-family: 'Courier New', monospace; font-size: 12px;
+      font-weight: 700; letter-spacing: 0.06em; cursor: pointer;
+      text-transform: uppercase; transition: opacity 0.2s;
     }
     .btn:hover { opacity: 0.85; }
     .btn-normal  { background: #1b5e20; color: #a5d6a7; }
     .btn-fault   { background: #7f0000; color: #ef9a9a; }
     .btn-stop    { background: #1e3a5f; color: #90caf9; }
-    .update-rate {
-      font-size: 11px;
-      color: #546e7a;
-      margin-left: auto;
-    }
+    .btn-diag    { background: #4a235a; color: #ce93d8; }
+    .update-rate { font-size: 11px; color: #546e7a; margin-left: auto; }
   </style>
 </head>
 <body>
@@ -197,22 +111,21 @@
 </div>
 
 <!-- ── Navigation ── -->
-<nav style="display:flex; gap:16px; margin-bottom:20px; 
+<nav style="display:flex; gap:16px; margin-bottom:20px;
             border-bottom:1px solid #1e3a5f; padding-bottom:12px;">
-  <a href="index.html"   
-     style="color:#4fc3f7; text-decoration:none; 
+  <a href="index.html"
+     style="color:#4fc3f7; text-decoration:none;
             font-size:12px; letter-spacing:0.08em;">
      ⬡ LIVE MONITOR
   </a>
-  <a href="diagnosis.html" 
+  <a href="diagnosis.html"
      onclick="goToDiagnosis(); return false;"
-     style="color:#546e7a; text-decoration:none; 
+     style="color:#546e7a; text-decoration:none;
             font-size:12px; letter-spacing:0.08em;">
      ⚙ FAULT DIAGNOSIS
   </a>
 </nav>
 
-<!-- ── Status Banner ── -->
 <!-- ── Status Banner ── -->
 <div class="status-banner normal" id="statusBanner">
   <div class="status-dot"></div>
@@ -223,39 +136,40 @@
   </div>
   <div class="anomaly-score" id="anomalyScore">—</div>
 </div>
+
 <!-- ── Controls ── -->
 <div class="controls">
   <button class="btn btn-normal" onclick="sendNormal()">▶ Simulate Normal</button>
-  <button class="btn btn-fault"  onclick="sendFault()">⚠ Simulate Fault</button>
+  <button class="btn btn-fault"  onclick="sendFault('coolant')">🌡 Coolant Failure</button>
+  <button class="btn btn-fault"  onclick="sendFault('feed')">⚗ Feed Spike</button>
+  <button class="btn btn-fault"  onclick="sendFault('flow')">💧 Flow Drop</button>
   <button class="btn btn-stop"   onclick="stopSim()">■ Stop</button>
+  <button class="btn btn-diag"   onclick="goToDiagnosis()">⚙ View Diagnosis</button>
   <span class="update-rate" id="updateRate">Interval: —</span>
 </div>
 
 <!-- ── Tank Sensor Cards ── -->
 <div class="grid-3">
-  <!-- Tank 1 -->
   <div class="panel">
     <div class="panel-title">Sensor Readings</div>
     <div class="tank-label">⬡ Tank 1</div>
     <div class="sensor-row"><span class="sensor-name">Ca₁ [mol/m³]</span><span class="sensor-value" id="Ca1">—</span></div>
     <div class="sensor-row"><span class="sensor-name">Cb₁ [mol/m³]</span><span class="sensor-value" id="Cb1">—</span></div>
-    <div class="sensor-row"><span class="sensor-name">T₁  [K]</span>     <span class="sensor-value" id="T1">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">T₁  [K]</span>    <span class="sensor-value" id="T1">—</span></div>
   </div>
-  <!-- Tank 2 -->
   <div class="panel">
     <div class="panel-title">Sensor Readings</div>
     <div class="tank-label">⬡ Tank 2</div>
     <div class="sensor-row"><span class="sensor-name">Ca₂ [mol/m³]</span><span class="sensor-value" id="Ca2">—</span></div>
     <div class="sensor-row"><span class="sensor-name">Cb₂ [mol/m³]</span><span class="sensor-value" id="Cb2">—</span></div>
-    <div class="sensor-row"><span class="sensor-name">T₂  [K]</span>     <span class="sensor-value" id="T2">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">T₂  [K]</span>    <span class="sensor-value" id="T2">—</span></div>
   </div>
-  <!-- Tank 3 -->
   <div class="panel">
     <div class="panel-title">Sensor Readings</div>
     <div class="tank-label">⬡ Tank 3</div>
     <div class="sensor-row"><span class="sensor-name">Ca₃ [mol/m³]</span><span class="sensor-value" id="Ca3">—</span></div>
     <div class="sensor-row"><span class="sensor-name">Cb₃ [mol/m³]</span><span class="sensor-value" id="Cb3">—</span></div>
-    <div class="sensor-row"><span class="sensor-name">T₃  [K]</span>     <span class="sensor-value" id="T3">—</span></div>
+    <div class="sensor-row"><span class="sensor-name">T₃  [K]</span>    <span class="sensor-value" id="T3">—</span></div>
   </div>
 </div>
 
@@ -263,19 +177,15 @@
 <div class="grid-2">
   <div class="panel">
     <div class="panel-title">Temperature Profile — All Tanks [K]</div>
-    <div class="chart-container">
-      <canvas id="tempChart"></canvas>
-    </div>
+    <div class="chart-container"><canvas id="tempChart"></canvas></div>
   </div>
   <div class="panel">
     <div class="panel-title">Anomaly Score Over Time</div>
-    <div class="chart-container">
-      <canvas id="scoreChart"></canvas>
-    </div>
+    <div class="chart-container"><canvas id="scoreChart"></canvas></div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="dashboard.js"></script>
 </body>
-
+</html>
